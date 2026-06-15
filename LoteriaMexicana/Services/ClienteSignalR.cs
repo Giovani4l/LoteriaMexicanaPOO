@@ -19,7 +19,6 @@ public class ClienteSignalR : IAsyncDisposable
         _urlHub = url;
     }
 
-    // ── Eventos del servidor hacia el cliente ─────────────────────────────────
     public event Action<bool, string>? RolAsignado;
     public event Action<List<CasillaDto>>? TablaAsignada;
     public event Action<string>? JuegoIniciado;
@@ -36,6 +35,7 @@ public class ClienteSignalR : IAsyncDisposable
     public event Action<string>? Desconectado;
     public event Action<string, string>? MensajeRecibido;
     public event Action<int>? PuntosActualizados;
+    public event Action<string>? FormatoAgregado;
 
     public bool Conectado => _conexionHub?.State == HubConnectionState.Connected;
 
@@ -91,18 +91,17 @@ public class ClienteSignalR : IAsyncDisposable
         _conexionHub.On<int>("PuntosActualizados", puntos =>
             PuntosActualizados?.Invoke(puntos));
 
+        _conexionHub.On<string>("FormatoAgregado", formato =>
+            FormatoAgregado?.Invoke(formato));
+
         _conexionHub.Closed += excepcion =>
         {
-            Desconectado?.Invoke(excepcion?.Message ?? "Conexión cerrada.");
+            Desconectado?.Invoke(excepcion?.Message ?? "Conexion cerrada.");
             return Task.CompletedTask;
         };
 
         await _conexionHub.StartAsync();
     }
-
-    // =========================================================================
-    // ACCIONES DEL CLIENTE → SERVIDOR
-    // =========================================================================
 
     public Task UnirseAlJuego(string nombreJugador) => InvocarConArgumento("UnirseAlJuego", nombreJugador);
     public Task IniciarJuego(string formato, bool tablaDoble, int filas, int columnas)
@@ -111,6 +110,7 @@ public class ClienteSignalR : IAsyncDisposable
             return Task.CompletedTask;
         return _conexionHub.InvokeAsync("IniciarJuego", formato, tablaDoble, filas, columnas);
     }
+
     public Task CantarCarta() => InvocarSinArgumentos("CantarCarta");
     public Task ToggleCarta(int numeroCarta) => InvocarConArgumento("ToggleCarta", numeroCarta);
     public Task ReclamarLoteria() => InvocarSinArgumentos("ReclamarLoteria");
@@ -119,6 +119,7 @@ public class ClienteSignalR : IAsyncDisposable
     public Task ReiniciarBaraja() => InvocarSinArgumentos("ReiniciarBaraja");
     public Task ReiniciarSala() => InvocarSinArgumentos("ReiniciarSala");
     public Task CargarTablaDesdeJson(List<CasillaDto> casillas) => InvocarConArgumento("CargarTablaDesdeJson", casillas);
+    public Task AgregarFormato(string formato) => InvocarConArgumento("AgregarFormato", formato);
 
     private Task InvocarSinArgumentos(string metodoHub)
     {
@@ -134,17 +135,9 @@ public class ClienteSignalR : IAsyncDisposable
         return _conexionHub.InvokeAsync(metodoHub, argumento);
     }
 
-    private Task InvocarConDosArgumentos(string metodoHub, object arg1, object arg2)
-    {
-        if (_conexionHub == null || _conexionHub.State != HubConnectionState.Connected)
-            return Task.CompletedTask;
-        return _conexionHub.InvokeAsync(metodoHub, arg1, arg2);
-    }
-
     public async ValueTask DisposeAsync()
     {
         if (_conexionHub != null)
             await _conexionHub.DisposeAsync();
     }
 }
-

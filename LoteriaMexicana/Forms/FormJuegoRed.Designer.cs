@@ -1,4 +1,4 @@
-namespace LoteriaMexicana.Forms;
+﻿namespace LoteriaMexicana.Forms;
 
 partial class FormJuegoRed
 {
@@ -46,6 +46,7 @@ partial class FormJuegoRed
         pnlDerecho = new Panel();
         tblSplit = new TableLayoutPanel();
         pnlGrilla = new Panel();
+        btnAgregarFormato = new Button();
         grilla = new TableLayoutPanel();
         btnLoteria = new Button();
         btnNuevaTabla = new Button();
@@ -67,6 +68,7 @@ partial class FormJuegoRed
         lblPuntos = new Label();
         lblConectados = new Label();
         lblSalaTitulo = new Label();
+        cmbFormatoExtra = new ComboBox();
         pnlTopBar.SuspendLayout();
         tblMain.SuspendLayout();
         pnlIzquierdo.SuspendLayout();
@@ -465,6 +467,8 @@ partial class FormJuegoRed
         pnlGrilla.BackColor = Color.Transparent;
         pnlGrilla.BackgroundImage = (Image)resources.GetObject("pnlGrilla.BackgroundImage");
         pnlGrilla.BackgroundImageLayout = ImageLayout.Stretch;
+        pnlGrilla.Controls.Add(cmbFormatoExtra);
+        pnlGrilla.Controls.Add(btnAgregarFormato);
         pnlGrilla.Controls.Add(grilla);
         pnlGrilla.Controls.Add(btnLoteria);
         pnlGrilla.Controls.Add(btnNuevaTabla);
@@ -479,6 +483,23 @@ partial class FormJuegoRed
         pnlGrilla.Name = "pnlGrilla";
         pnlGrilla.Size = new Size(834, 924);
         pnlGrilla.TabIndex = 0;
+        // 
+        // btnAgregarFormato
+        // 
+        btnAgregarFormato.BackColor = Color.FromArgb(130, 80, 0);
+        btnAgregarFormato.Cursor = Cursors.Hand;
+        btnAgregarFormato.FlatAppearance.BorderSize = 0;
+        btnAgregarFormato.FlatStyle = FlatStyle.Flat;
+        btnAgregarFormato.Font = new Font("Georgia", 10.2F, FontStyle.Bold | FontStyle.Italic);
+        btnAgregarFormato.ForeColor = Color.White;
+        btnAgregarFormato.Location = new Point(645, 61);
+        btnAgregarFormato.Margin = new Padding(3, 4, 3, 4);
+        btnAgregarFormato.Name = "btnAgregarFormato";
+        btnAgregarFormato.Size = new Size(175, 40);
+        btnAgregarFormato.TabIndex = 14;
+        btnAgregarFormato.Text = "Agregar Formato";
+        btnAgregarFormato.UseVisualStyleBackColor = false;
+        btnAgregarFormato.Click += btnAgregarFormato_Click;
         // 
         // grilla
         // 
@@ -731,7 +752,7 @@ partial class FormJuegoRed
         lstJugadores.BorderStyle = BorderStyle.None;
         lstJugadores.DrawMode = DrawMode.OwnerDrawFixed;
         lstJugadores.Font = new Font("Segoe UI", 9.5F);
-        lstJugadores.ItemHeight = 30;
+        lstJugadores.ItemHeight = 42;
         lstJugadores.Location = new Point(11, 114);
         lstJugadores.Margin = new Padding(3, 4, 3, 4);
         lstJugadores.Name = "lstJugadores";
@@ -741,15 +762,16 @@ partial class FormJuegoRed
         // 
         // lblPuntos
         // 
-        lblPuntos.BackColor = Color.Transparent;
-        lblPuntos.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
-        lblPuntos.ForeColor = Color.Black;
+        lblPuntos.BackColor = Color.FromArgb(35, 35, 35);
+        lblPuntos.BorderStyle = BorderStyle.FixedSingle;
+        lblPuntos.Font = new Font("Segoe UI", 13F, FontStyle.Bold);
+        lblPuntos.ForeColor = Color.White;
         lblPuntos.Location = new Point(0, 508);
         lblPuntos.Name = "lblPuntos";
-        lblPuntos.Size = new Size(200, 32);
+        lblPuntos.Size = new Size(200, 38);
         lblPuntos.TabIndex = 10;
         lblPuntos.Text = "Puntos: 0";
-        lblPuntos.TextAlign = ContentAlignment.MiddleLeft;
+        lblPuntos.TextAlign = ContentAlignment.MiddleCenter;
         // 
         // lblConectados
         // 
@@ -772,6 +794,15 @@ partial class FormJuegoRed
         lblSalaTitulo.TabIndex = 3;
         lblSalaTitulo.Text = "👥  Sala";
         lblSalaTitulo.TextAlign = ContentAlignment.MiddleLeft;
+        // 
+        // cmbFormatoExtra
+        // 
+        cmbFormatoExtra.FormattingEnabled = true;
+        cmbFormatoExtra.Items.AddRange(new object[] { "Ninguno,", "LineaHorizontal,", "LineaVertical,", "Diagonal,", "Cruz,", "Cruzita,", "TablaLlena" });
+        cmbFormatoExtra.Location = new Point(645, 108);
+        cmbFormatoExtra.Name = "cmbFormatoExtra";
+        cmbFormatoExtra.Size = new Size(151, 28);
+        cmbFormatoExtra.TabIndex = 15;
         // 
         // FormJuegoRed
         // 
@@ -863,4 +894,6 @@ partial class FormJuegoRed
     private ComboBox cmbVelocidad;
     private Button btnDetenerAuto;
     private Button btnAuto;
+    private Button btnAgregarFormato;
+    private ComboBox cmbFormatoExtra;
 }

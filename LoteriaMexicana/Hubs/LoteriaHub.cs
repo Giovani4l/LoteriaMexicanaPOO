@@ -1,4 +1,4 @@
-using LoteriaMexicana.Domain;
+﻿using LoteriaMexicana.Domain;
 using LoteriaMexicana.Domain.Enums;
 using LoteriaMexicana.Services;
 using Microsoft.AspNetCore.SignalR;
@@ -18,6 +18,7 @@ public class LoteriaHub : Hub
     private static bool _tablaDobleActiva = false;
     private static int _filasTabla = Tabla.FilasDefault;
     private static int _columnasTabla = Tabla.ColumnasDefault;
+    private static readonly HashSet<FormatoGanador> _formatosActivos = new();
 
     private const int PuntosPorCarta = 10;
     private const int PuntosPorVictoria = 100;
@@ -63,6 +64,7 @@ public class LoteriaHub : Hub
                     _tablaDobleActiva = false;
                     _filasTabla = Tabla.FilasDefault;
                     _columnasTabla = Tabla.ColumnasDefault;
+                    _formatosActivos.Clear();
                     _numerosCantatosEnPartida.Clear();
                     _jugadoresPorConexion.Clear();
                     _tablasPorConexion.Clear();
@@ -164,6 +166,8 @@ public class LoteriaHub : Hub
             _baraja.Barajear();
             _partidaEnCurso = true;
             _formatoActual = formato;
+            _formatosActivos.Clear();
+            _formatosActivos.Add(formato);
             _tablaDobleActiva = tablaDoble;
             _filasTabla = filas;
             _columnasTabla = columnas;
@@ -292,6 +296,7 @@ public class LoteriaHub : Hub
             _baraja.Barajear();
             _partidaEnCurso = false;
             _formatoActual = FormatoGanador.Ninguno;
+            _formatosActivos.Clear();
             _tablaDobleActiva = false;
             _filasTabla = Tabla.FilasDefault;
             _columnasTabla = Tabla.ColumnasDefault;
@@ -320,6 +325,29 @@ public class LoteriaHub : Hub
         await BroadcastEstadoJugadores();
     }
 
+    public async Task AgregarFormato(string formatoTexto)
+    {
+        lock (_bloqueo)
+        {
+            if (Context.ConnectionId != _idConexionHost)
+                throw new HubException("Solo el Griton puede agregar formatos.");
+            if (!_partidaEnCurso)
+                throw new HubException("El juego no ha iniciado.");
+        }
+
+        if (!Enum.TryParse<FormatoGanador>(formatoTexto, out var formato) ||
+            formato == FormatoGanador.Ninguno)
+            throw new HubException("Formato invalido.");
+
+        bool agregado;
+        lock (_bloqueo)
+        {
+            agregado = _formatosActivos.Add(formato);
+        }
+
+        if (agregado)
+            await Clients.All.SendAsync("FormatoAgregado", formato.ToString());
+    }
     private async Task ReiniciarBarajaInterno()
     {
         lock (_bloqueo)
@@ -376,12 +404,15 @@ public class LoteriaHub : Hub
             var trampaDetectada = VictoriaValidador
                 .DetectarTrampa(marcasReadOnly, _numerosCantatosEnPartida)
                 .ToList();
+            var cartasValidasParaVictoria = marcasJugador
+                .Concat(_numerosCantatosEnPartida)
+                .ToHashSet();
 
             if (trampaDetectada.Any())
             {
                 cartasConTrampa = trampaDetectada;
             }
-            else if (VictoriaValidador.EsVictoria(tablaJugador, marcasReadOnly, _formatoActual))
+            else if (VictoriaValidador.EsVictoriaEnCualquierFormato(tablaJugador, cartasValidasParaVictoria, _formatosActivos))
             {
                 infoJugador.Victorias++;
                 infoJugador.Puntos += PuntosPorVictoria;

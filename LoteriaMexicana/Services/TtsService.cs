@@ -1,4 +1,4 @@
-using System.Speech.Synthesis;
+﻿using System.Speech.Synthesis;
 
 namespace LoteriaMexicana.Services;
 
@@ -12,7 +12,7 @@ public sealed class TtsService : IDisposable
     public TtsService()
     {
         _sintetizador.SetOutputToDefaultAudioDevice();
-        _sintetizador.Rate = -1; // velocidad ligeramente más lenta, más natural
+        _sintetizador.Rate = -1; // velocidad ligeramente mas lenta, mas natural
 
         var vozEnEspaniol = _sintetizador
             .GetInstalledVoices()
@@ -22,12 +22,25 @@ public sealed class TtsService : IDisposable
             _sintetizador.SelectVoice(vozEnEspaniol.VoiceInfo.Name);
     }
 
-    /// <summary>Lee en voz alta la frase y el nombre de la carta.</summary>
-    public void CantarCarta(string frase, string nombreCarta)
+    public Task CantarCartaAsync(string frase, string nombreCarta)
     {
-        if (!Habilitado) return;
-        //_sintetizador.SpeakAsyncCancelAll();
+        if (!Habilitado || _disposed) return Task.CompletedTask;
+
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        void AlCompletar(object? sender, SpeakCompletedEventArgs e)
+        {
+            _sintetizador.SpeakCompleted -= AlCompletar;
+
+            if (e.Error != null)
+                tcs.TrySetException(e.Error);
+            else
+                tcs.TrySetResult();
+        }
+
+        _sintetizador.SpeakCompleted += AlCompletar;
         _sintetizador.SpeakAsync($"{frase}... {nombreCarta}");
+        return tcs.Task;
     }
 
     public void Dispose()
@@ -37,6 +50,7 @@ public sealed class TtsService : IDisposable
         _sintetizador.Dispose();
         _disposed = true;
     }
+
     public void CambiarVelocidad(int velocidad)
     {
         _sintetizador.Rate = velocidad;

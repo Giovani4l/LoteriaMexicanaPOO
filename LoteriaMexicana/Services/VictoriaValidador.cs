@@ -22,7 +22,19 @@ public static class VictoriaValidador
             _ => false
         };
     }
+    public static bool EsVictoriaEnCualquierFormato(
+    Tabla tabla,
+    IReadOnlySet<int> cartasMarcadas,
+    IEnumerable<FormatoGanador> formatos)
+    {
+        foreach (var formato in formatos)
+        {
+            if (EsVictoria(tabla, cartasMarcadas, formato))
+                return true;
+        }
 
+        return false;
+    }
     public static IEnumerable<int> DetectarTrampa(
         IReadOnlySet<int> cartasMarcadas,
         IEnumerable<int> cartasCantadas)

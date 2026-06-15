@@ -1,4 +1,4 @@
-using System.Drawing.Drawing2D;
+﻿using System.Drawing.Drawing2D;
 using System.Text.Json;
 using LoteriaMexicana.Domain;
 using LoteriaMexicana.Domain.Enums;
@@ -21,6 +21,7 @@ public partial class FormJuegoRed : Form
     private bool _modoAutomatico = false;
     // ── Estado de la partida ──────────────────────────────────────────────────
     private readonly Dictionary<int, string> _fichasEnTabla = new();
+    private readonly HashSet<int> _cartasCantadas = new();
     private bool _partidaEnCurso;
     private int _puntos;
 
@@ -29,7 +30,7 @@ public partial class FormJuegoRed : Form
     private bool _tablaDoble = false;
     private int _filas = 5;
     private int _columnas = 5;
-
+    private readonly HashSet<FormatoGanador> _formatosActivos = new();
     // ── Tabla ─────────────────────────────────────────────────────────────────
     private List<CasillaDto> _casillas = new();
     private int _anchoCol = 110;
@@ -57,20 +58,16 @@ public partial class FormJuegoRed : Form
         _fichas.PrecargarTodasLasFichas();
 
         InitializeComponent();
+        cmbFormatoExtra.DataSource =Enum.GetValues(typeof(FormatoGanador))
+        .Cast<FormatoGanador>()
+        .Where(f => f != FormatoGanador.Ninguno)
+        .ToList();
         _timerAutoCanto.Tick += async (s, e) =>
         {
             _timerAutoCanto.Stop();
 
-            try
-            {
-                if (_esHost && _partidaEnCurso)
-                    await _cliente.CantarCarta();
-            }
-            finally
-            {
-                if (_modoAutomatico)
-                    _timerAutoCanto.Start();
-            }
+            if (_esHost && _partidaEnCurso && !_cantandoCarta)
+                await _cliente.CantarCarta();
         };
         Text = $"Lotería Mexicana — {nombreJugador}{(esHost ? " (Gritón)" : "")}";
         lblUsuario.Text = $" {nombreJugador}{(esHost ? "   Gritón" : "")}";
@@ -99,6 +96,8 @@ public partial class FormJuegoRed : Form
         _filas = dlg.Filas;
         _columnas = dlg.Columnas;
         _tablaDoble = dlg.TablaDoble;
+        _formatosActivos.Clear();
+        _formatosActivos.Add(_formato);
 
         try
         {
@@ -366,6 +365,12 @@ public partial class FormJuegoRed : Form
         if (sender is not PictureBox celda || !_partidaEnCurso) return;
         int num = (int)celda.Tag!;
 
+        if (!_cartasCantadas.Contains(num))
+        {
+            MostrarMensaje("Esa carta todavia no ha salido.", Color.OrangeRed);
+            return;
+        }
+
         if (_fichasEnTabla.TryGetValue(num, out var actual) && actual == _fichaActiva)
             _fichasEnTabla.Remove(num);
         else
@@ -441,15 +446,30 @@ public partial class FormJuegoRed : Form
             MostrarMensaje($"Te uniste a una partida en curso. Formato: {formato}", Color.DimGray);
         });
 
-        _cliente.CartaCantada += (num, nombre, frase) => UI(() =>
+        _cliente.CartaCantada += async (num, nombre, frase) =>
         {
-            lblNombreCarta.Text = $"{num} — {nombre}";
-            lblFrase.Text = $"\"{frase}\"";
-            picCarta.Image = _imagenes.ObtenerImagenCarta(num);
-            AgregarAlHistorial(num, nombre);
-            ResaltarCarta(num, Color.FromArgb(200, 255, 200));
-            _tts.CantarCarta(frase, nombre);
-        });
+            UI(() =>
+            {
+                _cartasCantadas.Add(num);
+                lblNombreCarta.Text = $"{num} — {nombre}";
+                lblFrase.Text = $"\"{frase}\"";
+                picCarta.Image = _imagenes.ObtenerImagenCarta(num);
+                AgregarAlHistorial(num, nombre);
+                ResaltarCarta(num, Color.FromArgb(200, 255, 200));
+            });
+
+            _cantandoCarta = true;
+            try
+            {
+                await _tts.CantarCartaAsync(frase, nombre);
+            }
+            finally
+            {
+                _cantandoCarta = false;
+                if (_esHost && _modoAutomatico && _partidaEnCurso)
+                    UI(() => _timerAutoCanto.Start());
+            }
+        };
 
         _cliente.BarajaRebrajada += () => UI(() =>
             MostrarMensaje("🔀 Baraja agotada — ¡se volvió a barajar!", Color.DarkOrange));
@@ -457,6 +477,7 @@ public partial class FormJuegoRed : Form
         _cliente.BarajaReiniciada += () => UI(() =>
         {
             LimpiarHistorial();
+            _cartasCantadas.Clear();
             _puntos = 0; lblPuntos.Text = "⭐ Puntos: 0";
             MostrarMensaje("Baraja reiniciada.", Color.DimGray);
         });
@@ -467,6 +488,7 @@ public partial class FormJuegoRed : Form
             btnLoteria.Enabled = false; btnNuevaTabla.Enabled = true;
             if (_esHost) { btnCantarCarta.Enabled = false; btnIniciar.Enabled = true; }
             LimpiarHistorial();
+            _cartasCantadas.Clear();
             MostrarMensaje("🔄 Sala reiniciada.", Color.FromArgb(0, 104, 56));
         });
 
@@ -509,6 +531,14 @@ public partial class FormJuegoRed : Form
         _cliente.PuntosActualizados += pts => UI(() =>
         {
             _puntos = pts; lblPuntos.Text = $"⭐ Puntos: {_puntos}";
+        });
+
+        _cliente.FormatoAgregado += formato => UI(() =>
+        {
+            if (Enum.TryParse<FormatoGanador>(formato, out var formatoAgregado))
+                _formatosActivos.Add(formatoAgregado);
+
+            MostrarMensaje($"Formato agregado: {formato}", Color.DarkGreen);
         });
 
         _cliente.Desconectado += msg => UI(() => MostrarMensaje($"Desconectado: {msg}", Color.Red));
@@ -604,21 +634,23 @@ public partial class FormJuegoRed : Form
         using var bg = new SolidBrush(e.Index % 2 == 0 ? Color.White : Color.FromArgb(250, 248, 240));
         e.Graphics.FillRectangle(bg, e.Bounds);
 
-        using var fN = new Font("Segoe UI", 9f, item.EsGriton ? FontStyle.Bold : FontStyle.Regular);
-        using var fS = new Font("Segoe UI", 7.5f);
+        using var fN = new Font("Segoe UI", 9.5f, item.EsGriton ? FontStyle.Bold : FontStyle.Regular);
+        using var fS = new Font("Segoe UI", 8.5f, FontStyle.Bold);
         using var cN = new SolidBrush(item.EsGriton ? Color.FromArgb(0, 104, 56) : Color.FromArgb(40, 40, 40));
-        using var cV = new SolidBrush(Color.FromArgb(206, 17, 38));
-        using var cP = new SolidBrush(Color.FromArgb(180, 130, 0));
+        using var cV = new SolidBrush(Color.FromArgb(180, 20, 35));
+        using var cP = new SolidBrush(Color.FromArgb(120, 75, 0));
 
         var r = e.Bounds;
-        e.Graphics.DrawString($"{(item.EsGriton ? "🎤" : "👤")} {item.Nombre}", fN, cN,
-            new RectangleF(r.X + 6, r.Y + 2, r.Width - 80, r.Height - 4));
+        e.Graphics.DrawString(item.Nombre, fN, cN,
+            new RectangleF(r.X + 6, r.Y + 3, r.Width - 12, 18));
+
+        var statsY = r.Y + 22;
         if (item.Victorias > 0)
-            e.Graphics.DrawString($"🏆{item.Victorias}", fS, cV,
-                new RectangleF(r.Right - 75, r.Y + 2, 36, r.Height - 4));
+            e.Graphics.DrawString($"V: {item.Victorias}", fS, cV,
+                new RectangleF(r.X + 8, statsY, 58, 18));
         if (item.Puntos > 0)
-            e.Graphics.DrawString($"⭐{item.Puntos}", fS, cP,
-                new RectangleF(r.Right - 38, r.Y + 12, 36, r.Height - 4));
+            e.Graphics.DrawString($"Pts: {item.Puntos}", fS, cP,
+                new RectangleF(r.X + 70, statsY, r.Width - 76, 18));
 
         using var sep = new Pen(Color.FromArgb(230, 230, 220));
         e.Graphics.DrawLine(sep, r.Left, r.Bottom - 1, r.Right, r.Bottom - 1);
@@ -658,30 +690,34 @@ public partial class FormJuegoRed : Form
         g.CompositingQuality = CompositingQuality.HighQuality;
     }
 
-   
+
 
     private void cmbVelocidad_SelectedIndexChanged(object sender, EventArgs e)
     {
-        
         switch (cmbVelocidad.Text)
         {
             case "Lento":
                 _tts.CambiarVelocidad(-3);
-                _timerAutoCanto.Interval = 7000;
+                _timerAutoCanto.Interval = 3000;
                 break;
 
             case "Normal":
                 _tts.CambiarVelocidad(0);
-                _timerAutoCanto.Interval = 5000;
+                _timerAutoCanto.Interval = 1500;
                 break;
 
             case "Rápido":
                 _tts.CambiarVelocidad(3);
-                _timerAutoCanto.Interval = 3000;
+                _timerAutoCanto.Interval = 500;
                 break;
         }
-    }
 
+        if (_modoAutomatico && !_cantandoCarta && _partidaEnCurso)
+        {
+            _timerAutoCanto.Stop();
+            _timerAutoCanto.Start();
+        }
+    }
     private void btnAuto_Click_1(object sender, EventArgs e)
     {
         _modoAutomatico = true;
@@ -692,6 +728,28 @@ public partial class FormJuegoRed : Form
     {
         _modoAutomatico = false;
         _timerAutoCanto.Stop();
+    }
+
+    private async void btnAgregarFormato_Click(object sender, EventArgs e)
+    {
+        var formato = (FormatoGanador)cmbFormatoExtra.SelectedItem!;
+
+        if (_formatosActivos.Contains(formato))
+        {
+            MostrarMensaje(
+                $"El formato {formato} ya estaba activo.",
+                Color.Orange);
+            return;
+        }
+
+        try
+        {
+            await _cliente.AgregarFormato(formato.ToString());
+        }
+        catch (Exception ex)
+        {
+            MostrarMensaje($"No se pudo agregar formato: {ex.Message}", Color.Red);
+        }
     }
 
     // ── Tipos auxiliares ──────────────────────────────────────────────────────
