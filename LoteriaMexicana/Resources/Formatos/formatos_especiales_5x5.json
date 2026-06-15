@@ -1,0 +1,37 @@
+﻿{
+  "formatos": [
+    {
+      "nombre": "Diamante",
+      "base": 1,
+      "celdas": [
+        { "fila": 1, "columna": 3 },
+        { "fila": 2, "columna": 2 }, { "fila": 2, "columna": 4 },
+        { "fila": 3, "columna": 1 }, { "fila": 3, "columna": 5 },
+        { "fila": 4, "columna": 2 }, { "fila": 4, "columna": 4 },
+        { "fila": 5, "columna": 3 }
+      ]
+    },
+    {
+      "nombre": "Signo mas ancho",
+      "base": 1,
+      "celdas": [
+        { "fila": 1, "columna": 3 },
+        { "fila": 2, "columna": 3 },
+        { "fila": 3, "columna": 1 }, { "fila": 3, "columna": 2 }, { "fila": 3, "columna": 3 }, { "fila": 3, "columna": 4 }, { "fila": 3, "columna": 5 },
+        { "fila": 4, "columna": 3 },
+        { "fila": 5, "columna": 3 }
+      ]
+    },
+    {
+      "nombre": "Escalera descendente doble",
+      "base": 1,
+      "celdas": [
+        { "fila": 1, "columna": 1 }, { "fila": 1, "columna": 2 },
+        { "fila": 2, "columna": 2 }, { "fila": 2, "columna": 3 },
+        { "fila": 3, "columna": 3 }, { "fila": 3, "columna": 4 },
+        { "fila": 4, "columna": 4 }, { "fila": 4, "columna": 5 },
+        { "fila": 5, "columna": 5 }
+      ]
+    }
+  ]
+}

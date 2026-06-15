@@ -42,6 +42,8 @@ public class Tabla
         int filas = FilasDefault,
         int columnas = ColumnasDefault)
     {
+        ValidarDimensiones(filas, columnas);
+
         var cartasSeleccionadas = tablaDoble
             ? SeleccionarCartasConRepeticion(todasLasCartas, filas, columnas)
             : SeleccionarCartasSinRepeticion(todasLasCartas, filas, columnas);
@@ -75,10 +77,14 @@ public class Tabla
         int columnas)
     {
         int totalCasillas = filas * columnas;
-        return todasLasCartas
+        var cartas = todasLasCartas
             .OrderBy(_ => Random.Shared.Next())
-            .Take(totalCasillas)
             .ToArray();
+
+        if (cartas.Length < totalCasillas)
+            throw new InvalidOperationException($"No hay suficientes cartas para crear una tabla de {filas}x{columnas}.");
+
+        return cartas.Take(totalCasillas).ToArray();
     }
 
     //Selecciona cartas con una repetición para la tabla.
@@ -89,6 +95,9 @@ public class Tabla
     {
         int totalCasillas = filas * columnas;
         var pool = todasLasCartas.OrderBy(_ => Random.Shared.Next()).ToList();
+
+        if (pool.Count < totalCasillas - 1)
+            throw new InvalidOperationException($"No hay suficientes cartas para crear una tabla doble de {filas}x{columnas}.");
 
         // Seleccionar (total-1) cartas únicas
         var cartasUnicas = pool.Take(totalCasillas - 1).ToList();
@@ -111,6 +120,12 @@ public class Tabla
             casillas[indice / columnas, indice % columnas] = cartasSeleccionadas[indice];
 
         return new Tabla(casillas);
+    }
+
+    private static void ValidarDimensiones(int filas, int columnas)
+    {
+        if (filas != columnas || filas is not (4 or 5))
+            throw new ArgumentOutOfRangeException(nameof(filas), "Solo se pueden crear tablas de 4x4 o 5x5.");
     }
 }
 

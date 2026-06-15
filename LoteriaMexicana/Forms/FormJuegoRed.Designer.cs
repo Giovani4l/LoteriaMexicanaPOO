@@ -46,6 +46,7 @@ partial class FormJuegoRed
         pnlDerecho = new Panel();
         tblSplit = new TableLayoutPanel();
         pnlGrilla = new Panel();
+        cmbFormatoExtra = new ComboBox();
         btnAgregarFormato = new Button();
         grilla = new TableLayoutPanel();
         btnLoteria = new Button();
@@ -54,6 +55,7 @@ partial class FormJuegoRed
         btnGuardarTabla = new Button();
         lblHistorialTxt = new Label();
         btnCargarTabla = new Button();
+        btnCrearTabla = new Button();
         flpHistorial = new FlowLayoutPanel();
         pnlJugadores = new Panel();
         lblMensaje = new Label();
@@ -68,7 +70,6 @@ partial class FormJuegoRed
         lblPuntos = new Label();
         lblConectados = new Label();
         lblSalaTitulo = new Label();
-        cmbFormatoExtra = new ComboBox();
         pnlTopBar.SuspendLayout();
         tblMain.SuspendLayout();
         pnlIzquierdo.SuspendLayout();
@@ -476,6 +477,7 @@ partial class FormJuegoRed
         pnlGrilla.Controls.Add(btnGuardarTabla);
         pnlGrilla.Controls.Add(lblHistorialTxt);
         pnlGrilla.Controls.Add(btnCargarTabla);
+        pnlGrilla.Controls.Add(btnCrearTabla);
         pnlGrilla.Controls.Add(flpHistorial);
         pnlGrilla.Dock = DockStyle.Fill;
         pnlGrilla.Location = new Point(3, 4);
@@ -483,6 +485,15 @@ partial class FormJuegoRed
         pnlGrilla.Name = "pnlGrilla";
         pnlGrilla.Size = new Size(834, 924);
         pnlGrilla.TabIndex = 0;
+        // 
+        // cmbFormatoExtra
+        // 
+        cmbFormatoExtra.FormattingEnabled = true;
+        cmbFormatoExtra.Items.AddRange(new object[] { "Ninguno,", "LineaHorizontal,", "LineaVertical,", "Diagonal,", "Cruz,", "Cruzita,", "TablaLlena" });
+        cmbFormatoExtra.Location = new Point(645, 108);
+        cmbFormatoExtra.Name = "cmbFormatoExtra";
+        cmbFormatoExtra.Size = new Size(151, 28);
+        cmbFormatoExtra.TabIndex = 15;
         // 
         // btnAgregarFormato
         // 
@@ -620,6 +631,23 @@ partial class FormJuegoRed
         btnCargarTabla.UseVisualStyleBackColor = false;
         btnCargarTabla.Click += btnCargarTabla_Click;
         // 
+        // btnCrearTabla
+        // 
+        btnCrearTabla.BackColor = Color.FromArgb(0, 120, 215);
+        btnCrearTabla.Cursor = Cursors.Hand;
+        btnCrearTabla.FlatAppearance.BorderSize = 0;
+        btnCrearTabla.FlatStyle = FlatStyle.Flat;
+        btnCrearTabla.Font = new Font("Georgia", 10.2F, FontStyle.Bold | FontStyle.Italic);
+        btnCrearTabla.ForeColor = Color.White;
+        btnCrearTabla.Location = new Point(12, 154);
+        btnCrearTabla.Margin = new Padding(3, 4, 3, 4);
+        btnCrearTabla.Name = "btnCrearTabla";
+        btnCrearTabla.Size = new Size(175, 40);
+        btnCrearTabla.TabIndex = 16;
+        btnCrearTabla.Text = "Crear Tabla";
+        btnCrearTabla.UseVisualStyleBackColor = false;
+        btnCrearTabla.Click += btnCrearTabla_Click;
+        // 
         // flpHistorial
         // 
         flpHistorial.AutoScroll = true;
@@ -756,7 +784,7 @@ partial class FormJuegoRed
         lstJugadores.Location = new Point(11, 114);
         lstJugadores.Margin = new Padding(3, 4, 3, 4);
         lstJugadores.Name = "lstJugadores";
-        lstJugadores.Size = new Size(169, 390);
+        lstJugadores.Size = new Size(169, 378);
         lstJugadores.TabIndex = 0;
         lstJugadores.DrawItem += lstJugadores_DrawItem;
         // 
@@ -794,15 +822,6 @@ partial class FormJuegoRed
         lblSalaTitulo.TabIndex = 3;
         lblSalaTitulo.Text = "👥  Sala";
         lblSalaTitulo.TextAlign = ContentAlignment.MiddleLeft;
-        // 
-        // cmbFormatoExtra
-        // 
-        cmbFormatoExtra.FormattingEnabled = true;
-        cmbFormatoExtra.Items.AddRange(new object[] { "Ninguno,", "LineaHorizontal,", "LineaVertical,", "Diagonal,", "Cruz,", "Cruzita,", "TablaLlena" });
-        cmbFormatoExtra.Location = new Point(645, 108);
-        cmbFormatoExtra.Name = "cmbFormatoExtra";
-        cmbFormatoExtra.Size = new Size(151, 28);
-        cmbFormatoExtra.TabIndex = 15;
         // 
         // FormJuegoRed
         // 
@@ -890,6 +909,7 @@ partial class FormJuegoRed
     private System.Windows.Forms.Label            lblPuntos;
     private System.Windows.Forms.Button           btnGuardarTabla;
     private System.Windows.Forms.Button           btnCargarTabla;
+    private System.Windows.Forms.Button           btnCrearTabla;
     private System.Windows.Forms.Button           btnReiniciarSala;
     private ComboBox cmbVelocidad;
     private Button btnDetenerAuto;

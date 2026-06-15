@@ -1,0 +1,44 @@
+﻿{
+  "formatos": [
+    {
+      "nombre": "4x4 cuatro esquinas",
+      "base": 1,
+      "celdas": [
+        { "fila": 1, "columna": 1 },
+        { "fila": 1, "columna": 4 },
+        { "fila": 4, "columna": 1 },
+        { "fila": 4, "columna": 4 }
+      ]
+    },
+    {
+      "nombre": "4x4 marco completo",
+      "base": 1,
+      "celdas": [
+        { "fila": 1, "columna": 1 }, { "fila": 1, "columna": 2 }, { "fila": 1, "columna": 3 }, { "fila": 1, "columna": 4 },
+        { "fila": 2, "columna": 1 }, { "fila": 2, "columna": 4 },
+        { "fila": 3, "columna": 1 }, { "fila": 3, "columna": 4 },
+        { "fila": 4, "columna": 1 }, { "fila": 4, "columna": 2 }, { "fila": 4, "columna": 3 }, { "fila": 4, "columna": 4 }
+      ]
+    },
+    {
+      "nombre": "4x4 bloque 2x2 cualquier esquina",
+      "base": 1,
+      "patrones": [
+        [ { "fila": 1, "columna": 1 }, { "fila": 1, "columna": 2 }, { "fila": 2, "columna": 1 }, { "fila": 2, "columna": 2 } ],
+        [ { "fila": 1, "columna": 3 }, { "fila": 1, "columna": 4 }, { "fila": 2, "columna": 3 }, { "fila": 2, "columna": 4 } ],
+        [ { "fila": 3, "columna": 1 }, { "fila": 3, "columna": 2 }, { "fila": 4, "columna": 1 }, { "fila": 4, "columna": 2 } ],
+        [ { "fila": 3, "columna": 3 }, { "fila": 3, "columna": 4 }, { "fila": 4, "columna": 3 }, { "fila": 4, "columna": 4 } ]
+      ]
+    },
+    {
+      "nombre": "4x4 letra X",
+      "base": 1,
+      "celdas": [
+        { "fila": 1, "columna": 1 }, { "fila": 1, "columna": 4 },
+        { "fila": 2, "columna": 2 }, { "fila": 2, "columna": 3 },
+        { "fila": 3, "columna": 2 }, { "fila": 3, "columna": 3 },
+        { "fila": 4, "columna": 1 }, { "fila": 4, "columna": 4 }
+      ]
+    }
+  ]
+}

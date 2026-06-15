@@ -1,0 +1,33 @@
+﻿{
+  "formatos": [
+    {
+      "nombre": "Bloque 2x2 cualquier esquina",
+      "base": 1,
+      "patrones": [
+        [ { "fila": 1, "columna": 1 }, { "fila": 1, "columna": 2 }, { "fila": 2, "columna": 1 }, { "fila": 2, "columna": 2 } ],
+        [ { "fila": 1, "columna": 4 }, { "fila": 1, "columna": 5 }, { "fila": 2, "columna": 4 }, { "fila": 2, "columna": 5 } ],
+        [ { "fila": 4, "columna": 1 }, { "fila": 4, "columna": 2 }, { "fila": 5, "columna": 1 }, { "fila": 5, "columna": 2 } ],
+        [ { "fila": 4, "columna": 4 }, { "fila": 4, "columna": 5 }, { "fila": 5, "columna": 4 }, { "fila": 5, "columna": 5 } ]
+      ]
+    },
+    {
+      "nombre": "Bloque 3x3 central",
+      "base": 1,
+      "celdas": [
+        { "fila": 2, "columna": 2 }, { "fila": 2, "columna": 3 }, { "fila": 2, "columna": 4 },
+        { "fila": 3, "columna": 2 }, { "fila": 3, "columna": 3 }, { "fila": 3, "columna": 4 },
+        { "fila": 4, "columna": 2 }, { "fila": 4, "columna": 3 }, { "fila": 4, "columna": 4 }
+      ]
+    },
+    {
+      "nombre": "Centro 2x2",
+      "base": 1,
+      "patrones": [
+        [ { "fila": 2, "columna": 2 }, { "fila": 2, "columna": 3 }, { "fila": 3, "columna": 2 }, { "fila": 3, "columna": 3 } ],
+        [ { "fila": 2, "columna": 3 }, { "fila": 2, "columna": 4 }, { "fila": 3, "columna": 3 }, { "fila": 3, "columna": 4 } ],
+        [ { "fila": 3, "columna": 2 }, { "fila": 3, "columna": 3 }, { "fila": 4, "columna": 2 }, { "fila": 4, "columna": 3 } ],
+        [ { "fila": 3, "columna": 3 }, { "fila": 3, "columna": 4 }, { "fila": 4, "columna": 3 }, { "fila": 4, "columna": 4 } ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+﻿{
+  "formatos": [
+    {
+      "nombre": "Cuatro esquinas",
+      "base": 1,
+      "celdas": [
+        { "fila": 1, "columna": 1 },
+        { "fila": 1, "columna": 5 },
+        { "fila": 5, "columna": 1 },
+        { "fila": 5, "columna": 5 }
+      ]
+    },
+    {
+      "nombre": "Marco completo",
+      "base": 1,
+      "celdas": [
+        { "fila": 1, "columna": 1 }, { "fila": 1, "columna": 2 }, { "fila": 1, "columna": 3 }, { "fila": 1, "columna": 4 }, { "fila": 1, "columna": 5 },
+        { "fila": 2, "columna": 1 }, { "fila": 2, "columna": 5 },
+        { "fila": 3, "columna": 1 }, { "fila": 3, "columna": 5 },
+        { "fila": 4, "columna": 1 }, { "fila": 4, "columna": 5 },
+        { "fila": 5, "columna": 1 }, { "fila": 5, "columna": 2 }, { "fila": 5, "columna": 3 }, { "fila": 5, "columna": 4 }, { "fila": 5, "columna": 5 }
+      ]
+    },
+    {
+      "nombre": "Marco superior",
+      "base": 1,
+      "celdas": [
+        { "fila": 1, "columna": 1 }, { "fila": 1, "columna": 2 }, { "fila": 1, "columna": 3 }, { "fila": 1, "columna": 4 }, { "fila": 1, "columna": 5 },
+        { "fila": 2, "columna": 1 }, { "fila": 2, "columna": 5 },
+        { "fila": 3, "columna": 1 }, { "fila": 3, "columna": 5 }
+      ]
+    }
+  ]
+}

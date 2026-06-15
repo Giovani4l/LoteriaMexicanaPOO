@@ -30,9 +30,10 @@ public partial class FormJuegoRed : Form
     private bool _tablaDoble = false;
     private int _filas = 5;
     private int _columnas = 5;
+    private int _cantidadTablas = 1;
     private readonly HashSet<FormatoGanador> _formatosActivos = new();
     // ── Tabla ─────────────────────────────────────────────────────────────────
-    private List<CasillaDto> _casillas = new();
+    private List<TablaJugadorDto> _tablas = new();
     private int _anchoCol = 110;
     private int _altoFila = 128;
     private const int TamFichaPanel = 70;
@@ -62,6 +63,9 @@ public partial class FormJuegoRed : Form
         .Cast<FormatoGanador>()
         .Where(f => f != FormatoGanador.Ninguno)
         .ToList();
+        btnAgregarFormato.Visible = _esHost;
+        cmbFormatoExtra.Visible = _esHost;
+        AgregarBotonCargarFormatoJson();
         _timerAutoCanto.Tick += async (s, e) =>
         {
             _timerAutoCanto.Stop();
@@ -89,12 +93,13 @@ public partial class FormJuegoRed : Form
 
     private async void btnIniciar_Click(object sender, EventArgs e)
     {
-        using var dlg = new FormConfigurarPartida(_formato, _filas, _tablaDoble);
+        using var dlg = new FormConfigurarPartida(_formato, _filas, _tablaDoble, _cantidadTablas);
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
 
         _formato = dlg.FormatoSeleccionado;
         _filas = dlg.Filas;
         _columnas = dlg.Columnas;
+        _cantidadTablas = dlg.CantidadTablas;
         _tablaDoble = dlg.TablaDoble;
         _formatosActivos.Clear();
         _formatosActivos.Add(_formato);
@@ -102,7 +107,7 @@ public partial class FormJuegoRed : Form
         try
         {
             btnIniciar.Enabled = false;
-            await _cliente.IniciarJuego(_formato.ToString(), _tablaDoble, _filas, _columnas);
+            await _cliente.IniciarJuego(_formato.ToString(), _tablaDoble, _filas, _columnas, _cantidadTablas);
         }
         catch (Exception ex)
         {
@@ -151,7 +156,7 @@ public partial class FormJuegoRed : Form
 
     private void btnGuardarTabla_Click(object sender, EventArgs e)
     {
-        if (_casillas.Count == 0)
+        if (_tablas.Count == 0 || _tablas[0].Casillas.Count == 0)
         {
             MessageBox.Show("Aún no tienes una tabla asignada.", "Sin tabla",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -162,11 +167,18 @@ public partial class FormJuegoRed : Form
         if (dlgNombre.ShowDialog(this) != DialogResult.OK) return;
         var nombre = dlgNombre.NombreIngresado;
 
-        int cols = (int)Math.Round(Math.Sqrt(_casillas.Count));
+        int cols = _columnas;
+        var tablasJson = _tablas
+            .OrderBy(t => t.Indice)
+            .Select(t => new TablaGuardadaItemDto(
+                t.Indice,
+                t.Casillas.Select((c, i) => new TablaJsonDto(i / cols, i % cols, c.Numero, c.Nombre)).ToList()))
+            .ToList();
         var dto = new TablaGuardadaDto(
             _nombreJugador, nombre,
             DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-            _casillas.Select((c, i) => new TablaJsonDto(i / cols, i % cols, c.Numero, c.Nombre)).ToList());
+            tablasJson[0].Casillas,
+            tablasJson);
 
         var json = JsonSerializer.Serialize(dto, new JsonSerializerOptions { WriteIndented = true });
 
@@ -186,7 +198,29 @@ public partial class FormJuegoRed : Form
         }
     }
 
-    private void btnCargarTabla_Click(object sender, EventArgs e)
+    private async void btnCrearTabla_Click(object? sender, EventArgs e)
+    {
+        var cartas = new Baraja().ObtenerTodas();
+        using var dlg = new FormCrearTabla(cartas);
+        if (dlg.ShowDialog(this) != DialogResult.OK || dlg.TablaCreada == null) return;
+
+        var tablas = new List<TablaJugadorDto> { dlg.TablaCreada };
+
+        try
+        {
+            await _cliente.CargarTablasPersonalizadas(tablas, dlg.FilasSeleccionadas, dlg.ColumnasSeleccionadas);
+            RenderizarTablas(tablas, dlg.FilasSeleccionadas, dlg.ColumnasSeleccionadas);
+            _cantidadTablas = tablas.Count;
+            _tablaDoble = dlg.TablaDoble;
+            MostrarMensaje($"Tabla personalizada {dlg.FilasSeleccionadas}x{dlg.ColumnasSeleccionadas} {(dlg.TablaDoble ? "doble" : "simple")} creada.", Color.FromArgb(0, 104, 56));
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "No se puede crear la tabla",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+    }
+    private async void btnCargarTabla_Click(object sender, EventArgs e)
     {
         using var dlg = new OpenFileDialog
         {
@@ -211,20 +245,41 @@ public partial class FormJuegoRed : Form
         }
 
         int esperado = _filas * _columnas;
-        if (dto?.Casillas == null || dto.Casillas.Count != esperado)
+        var tablasArchivo = dto?.Tablas != null && dto.Tablas.Count > 0
+            ? dto.Tablas
+            : dto?.Casillas != null
+                ? new List<TablaGuardadaItemDto> { new(0, dto.Casillas) }
+                : null;
+
+        if (tablasArchivo == null || tablasArchivo.Any(t => t.Casillas == null || t.Casillas.Count != esperado))
         {
-            MessageBox.Show($"La tabla debe tener {esperado} casillas ({_filas}×{_columnas}).",
-                "Tabla inválida", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show($"Cada tabla debe tener {esperado} casillas ({_filas}x{_columnas}).",
+                "Tabla invalida", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
-        var ordenadas = dto.Casillas
-            .OrderBy(c => c.Fila).ThenBy(c => c.Columna)
-            .Select(c => new CasillaDto(c.NumeroCarta, c.NombreCarta)).ToList();
+        var tablasOrdenadas = tablasArchivo
+            .OrderBy(t => t.Indice)
+            .Select((t, indice) => new TablaJugadorDto(
+                indice,
+                t.Casillas
+                    .OrderBy(c => c.Fila).ThenBy(c => c.Columna)
+                    .Select(c => new CasillaDto(c.NumeroCarta, c.NombreCarta))
+                    .ToList()))
+            .ToList();
 
-        RenderizarTabla(ordenadas);
-        _ = _cliente.CargarTablaDesdeJson(ordenadas);
-        MostrarMensaje($"📂 Tabla \"{dto.NombreTabla}\" de {dto.NombreJugador} cargada.", Color.FromArgb(0, 104, 56));
+        try
+        {
+            await _cliente.CargarTablasDesdeJson(tablasOrdenadas);
+            RenderizarTablas(tablasOrdenadas, _filas, _columnas);
+            _cantidadTablas = tablasOrdenadas.Count;
+            MostrarMensaje($"Tabla \"{dto!.NombreTabla}\" de {dto.NombreJugador} cargada ({_cantidadTablas}).", Color.FromArgb(0, 104, 56));
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "No se puede cargar la tabla",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
     }
 
     private async void btnEnviar_Click(object sender, EventArgs e) => await EnviarMensajeChat();
@@ -308,38 +363,80 @@ public partial class FormJuegoRed : Form
     // TABLA (grilla de cartas)
     // =========================================================================
 
-    private void RenderizarTabla(List<CasillaDto> casillas)
+    private void RenderizarTablas(List<TablaJugadorDto> tablas, int filas, int columnas)
     {
-        int total = casillas.Count;
-        int cols = total == 16 ? 4 : 5;
-        _anchoCol = cols == 4 ? 137 : 110;
-        _altoFila = cols == 4 ? 160 : 128;
+        _filas = filas == 4 ? 4 : 5;
+        _columnas = _filas;
+        _cantidadTablas = Math.Max(1, tablas.Count);
+        _tablas = tablas;
+        _fichasEnTabla.Clear();
+
+        int anchoDisponible = Math.Max(320, pnlGrilla.ClientSize.Width - 30);
+        _anchoCol = _columnas == 4 ? Math.Min(137, anchoDisponible / 4) : Math.Min(110, anchoDisponible / 5);
+        _altoFila = _columnas == 4 ? 160 : 128;
 
         grilla.SuspendLayout();
         grilla.Controls.Clear();
-        grilla.ColumnCount = cols;
-        grilla.RowCount = cols;
-        grilla.AutoSize = false;
-        grilla.Size = new Size(cols * _anchoCol, cols * _altoFila);
         grilla.ColumnStyles.Clear();
         grilla.RowStyles.Clear();
-        for (int i = 0; i < cols; i++)
+        grilla.ColumnCount = 1;
+        grilla.RowCount = 1;
+        grilla.AutoSize = true;
+        grilla.Size = new Size(_columnas * _anchoCol + 20, 1);
+
+        var contenedor = new FlowLayoutPanel
         {
-            grilla.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, _anchoCol));
-            grilla.RowStyles.Add(new RowStyle(SizeType.Absolute, _altoFila));
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            Margin = new Padding(0),
+            Padding = new Padding(0),
+        };
+
+        foreach (var tabla in tablas.OrderBy(t => t.Indice))
+        {
+            contenedor.Controls.Add(new Label
+            {
+                AutoSize = false,
+                Size = new Size(_columnas * _anchoCol, 24),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
+                Text = $"Tabla {tabla.Indice + 1}",
+                Margin = new Padding(0, tabla.Indice == 0 ? 0 : 12, 0, 4),
+            });
+            contenedor.Controls.Add(CrearTablaVisual(tabla));
         }
 
-        _fichasEnTabla.Clear();
-        _casillas = casillas;
-
-        for (int i = 0; i < total; i++)
-            grilla.Controls.Add(CrearCelda(casillas[i].Numero, casillas[i].Nombre), i % cols, i / cols);
-
+        grilla.Controls.Add(contenedor, 0, 0);
         grilla.ResumeLayout(true);
         grilla.Location = new Point(Math.Max(0, (pnlGrilla.ClientSize.Width - grilla.Width) / 2), 248);
     }
 
-    private PictureBox CrearCelda(int numero, string nombre)
+    private TableLayoutPanel CrearTablaVisual(TablaJugadorDto tabla)
+    {
+        var panel = new TableLayoutPanel
+        {
+            ColumnCount = _columnas,
+            RowCount = _filas,
+            AutoSize = false,
+            Size = new Size(_columnas * _anchoCol, _filas * _altoFila),
+            Margin = new Padding(0),
+            Padding = new Padding(0),
+        };
+
+        for (int c = 0; c < _columnas; c++)
+            panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, _anchoCol));
+        for (int f = 0; f < _filas; f++)
+            panel.RowStyles.Add(new RowStyle(SizeType.Absolute, _altoFila));
+
+        for (int i = 0; i < tabla.Casillas.Count; i++)
+            panel.Controls.Add(CrearCelda(tabla.Indice, tabla.Casillas[i].Numero, tabla.Casillas[i].Nombre), i % _columnas, i / _columnas);
+
+        return panel;
+    }
+
+    private PictureBox CrearCelda(int indiceTabla, int numero, string nombre)
     {
         var celda = new PictureBox
         {
@@ -350,11 +447,11 @@ public partial class FormJuegoRed : Form
             Margin = new Padding(0),
             Dock = DockStyle.Fill,
             Cursor = Cursors.Hand,
-            Tag = numero,
+            Tag = new CeldaTag(indiceTabla, numero),
             Image = EscalarImagen(_imagenes.ObtenerImagenCarta(numero), _anchoCol, _altoFila),
         };
         var tip = new ToolTip();
-        tip.SetToolTip(celda, $"{numero} - {nombre}");
+        tip.SetToolTip(celda, $"Tabla {indiceTabla + 1}: {numero} - {nombre}");
         _tooltips.Add(tip);
         celda.Click += celda_Click;
         return celda;
@@ -362,28 +459,22 @@ public partial class FormJuegoRed : Form
 
     private void celda_Click(object sender, EventArgs e)
     {
-        if (sender is not PictureBox celda || !_partidaEnCurso) return;
-        int num = (int)celda.Tag!;
+        if (sender is not PictureBox celda || !_partidaEnCurso || celda.Tag is not CeldaTag tag) return;
+        int clave = CrearClaveFicha(tag.IndiceTabla, tag.NumeroCarta);
 
-        if (!_cartasCantadas.Contains(num))
-        {
-            MostrarMensaje("Esa carta todavia no ha salido.", Color.OrangeRed);
-            return;
-        }
-
-        if (_fichasEnTabla.TryGetValue(num, out var actual) && actual == _fichaActiva)
-            _fichasEnTabla.Remove(num);
+        if (_fichasEnTabla.TryGetValue(clave, out var actual) && actual == _fichaActiva)
+            _fichasEnTabla.Remove(clave);
         else
-            _fichasEnTabla[num] = _fichaActiva;
+            _fichasEnTabla[clave] = _fichaActiva;
 
-        RefrescarCelda(celda, num);
-        _ = _cliente.ToggleCarta(num);
+        RefrescarCelda(celda, tag);
+        _ = _cliente.ToggleCarta(tag.IndiceTabla, tag.NumeroCarta);
     }
 
-    private void RefrescarCelda(PictureBox celda, int num)
+    private void RefrescarCelda(PictureBox celda, CeldaTag tag)
     {
-        var carta = _imagenes.ObtenerImagenCarta(num);
-        celda.Image = _fichasEnTabla.TryGetValue(num, out var ficha)
+        var carta = _imagenes.ObtenerImagenCarta(tag.NumeroCarta);
+        celda.Image = _fichasEnTabla.TryGetValue(CrearClaveFicha(tag.IndiceTabla, tag.NumeroCarta), out var ficha)
             ? ComponerCartaConFicha(carta, _fichas.ObtenerFicha(ficha), celda.Width, celda.Height)
             : EscalarImagen(carta, celda.Width, celda.Height);
         celda.Invalidate();
@@ -391,14 +482,14 @@ public partial class FormJuegoRed : Form
 
     private void RefrescarTodasLasCeldas()
     {
-        foreach (Control c in grilla.Controls)
-            if (c is PictureBox celda) RefrescarCelda(celda, (int)celda.Tag!);
+        foreach (var c in EnumerarControles(grilla))
+            if (c is PictureBox celda && celda.Tag is CeldaTag tag) RefrescarCelda(celda, tag);
     }
 
     private void ResaltarCarta(int num, Color color)
     {
-        foreach (Control c in grilla.Controls)
-            if (c is PictureBox celda && (int)celda.Tag! == num)
+        foreach (var c in EnumerarControles(grilla))
+            if (c is PictureBox celda && celda.Tag is CeldaTag tag && tag.NumeroCarta == num)
                 celda.BackColor = color;
     }
 
@@ -421,9 +512,9 @@ public partial class FormJuegoRed : Form
         _cliente.RolAsignado += (esHost, _) =>
             UI(() => MostrarMensaje($"Conectado como {(esHost ? "Gritón" : "Jugador")}", Color.DimGray));
 
-        _cliente.TablaAsignada += casillas => UI(() =>
+        _cliente.TablasAsignadas += (tablas, filas, columnas) => UI(() =>
         {
-            RenderizarTabla(casillas);
+            RenderizarTablas(tablas, filas, columnas);
             if (!_partidaEnCurso) btnNuevaTabla.Enabled = true;
         });
 
@@ -436,13 +527,13 @@ public partial class FormJuegoRed : Form
             MostrarMensaje($"¡Juego iniciado! Formato: {formato}", Color.FromArgb(0, 104, 56));
         });
 
-        _cliente.JuegoYaIniciado += (formato, casillas) => UI(() =>
+        _cliente.JuegoYaIniciado += (formato, tablas, filas, columnas) => UI(() =>
         {
             _partidaEnCurso = true;
             btnLoteria.Enabled = true;
             btnNuevaTabla.Enabled = false;
             if (_esHost) { btnCantarCarta.Enabled = true; btnIniciar.Enabled = false; }
-            RenderizarTabla(casillas);
+            RenderizarTablas(tablas, filas, columnas);
             MostrarMensaje($"Te uniste a una partida en curso. Formato: {formato}", Color.DimGray);
         });
 
@@ -513,8 +604,8 @@ public partial class FormJuegoRed : Form
         _cliente.Trampa += invalidas => UI(() =>
         {
             MostrarMensaje("⚠️ ¡Trampa! Fichas en cartas que no han salido.", Color.Red);
-            foreach (Control c in grilla.Controls)
-                if (c is PictureBox celda && invalidas.Contains((int)celda.Tag!))
+            foreach (var c in EnumerarControles(grilla))
+                if (c is PictureBox celda && celda.Tag is CeldaTag tag && invalidas.Contains(tag.NumeroCarta))
                     celda.BackColor = Color.FromArgb(255, 160, 160);
         });
 
@@ -585,6 +676,16 @@ public partial class FormJuegoRed : Form
     {
         lblMensaje.Text = texto;
         lblMensaje.ForeColor = color;
+    }
+
+    private static IEnumerable<Control> EnumerarControles(Control raiz)
+    {
+        foreach (Control control in raiz.Controls)
+        {
+            yield return control;
+            foreach (var hijo in EnumerarControles(control))
+                yield return hijo;
+        }
     }
 
     private void UI(Action a)
@@ -730,6 +831,47 @@ public partial class FormJuegoRed : Form
         _timerAutoCanto.Stop();
     }
 
+    private void AgregarBotonCargarFormatoJson()
+    {
+        var btnCargarFormatoJson = new Button
+        {
+            BackColor = Color.FromArgb(0, 104, 56),
+            Cursor = Cursors.Hand,
+            FlatStyle = FlatStyle.Flat,
+            Font = new Font("Georgia", 9.5F, FontStyle.Bold | FontStyle.Italic),
+            ForeColor = Color.White,
+            Location = new Point(645, 145),
+            Size = new Size(175, 34),
+            Text = "Cargar JSON",
+            UseVisualStyleBackColor = false,
+            Visible = _esHost,
+        };
+        btnCargarFormatoJson.FlatAppearance.BorderSize = 0;
+        btnCargarFormatoJson.Click += btnCargarFormatoJson_Click;
+        pnlGrilla.Controls.Add(btnCargarFormatoJson);
+        btnCargarFormatoJson.BringToFront();
+    }
+
+    private async void btnCargarFormatoJson_Click(object? sender, EventArgs e)
+    {
+        using var dlg = new OpenFileDialog
+        {
+            Title = "Cargar formatos ganadores",
+            Filter = "JSON (*.json)|*.json",
+            RestoreDirectory = true,
+        };
+
+        if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
+        try
+        {
+            await _cliente.AgregarFormato(File.ReadAllText(dlg.FileName));
+        }
+        catch (Exception ex)
+        {
+            MostrarMensaje($"No se pudo cargar formato JSON: {ex.Message}", Color.Red);
+        }
+    }
     private async void btnAgregarFormato_Click(object sender, EventArgs e)
     {
         var formato = (FormatoGanador)cmbFormatoExtra.SelectedItem!;
@@ -754,8 +896,14 @@ public partial class FormJuegoRed : Form
 
     // ── Tipos auxiliares ──────────────────────────────────────────────────────
 
+    private static int CrearClaveFicha(int indiceTabla, int numeroCarta) => indiceTabla * 1000 + numeroCarta;
+
+    private record CeldaTag(int IndiceTabla, int NumeroCarta);
+
     private record TablaGuardadaDto(string NombreJugador, string NombreTabla,
-        string FechaGuardado, List<TablaJsonDto> Casillas);
+        string FechaGuardado, List<TablaJsonDto> Casillas, List<TablaGuardadaItemDto>? Tablas = null);
+
+    private record TablaGuardadaItemDto(int Indice, List<TablaJsonDto> Casillas);
 
     private record JugadorItem(string Nombre, bool EsGriton, int Victorias, int Puntos = 0)
     {

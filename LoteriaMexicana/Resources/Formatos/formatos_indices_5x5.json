@@ -1,0 +1,30 @@
+﻿{
+  "formatos": [
+    {
+      "nombre": "Fila superior por indices",
+      "base": 1,
+      "indices": [1, 2, 3, 4, 5]
+    },
+    {
+      "nombre": "Columna izquierda por indices",
+      "base": 1,
+      "indices": [1, 6, 11, 16, 21]
+    },
+    {
+      "nombre": "Zigzag por indices",
+      "base": 1,
+      "indices": [1, 7, 13, 17, 21]
+    },
+    {
+      "nombre": "Cualquier fila corta por indices",
+      "base": 1,
+      "patronesIndices": [
+        [1, 2, 3],
+        [6, 7, 8],
+        [11, 12, 13],
+        [16, 17, 18],
+        [21, 22, 23]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+﻿{
+  "formatos": [
+    {
+      "nombre": "Letra L",
+      "base": 1,
+      "celdas": [
+        { "fila": 1, "columna": 1 },
+        { "fila": 2, "columna": 1 },
+        { "fila": 3, "columna": 1 },
+        { "fila": 4, "columna": 1 },
+        { "fila": 5, "columna": 1 },
+        { "fila": 5, "columna": 2 },
+        { "fila": 5, "columna": 3 },
+        { "fila": 5, "columna": 4 },
+        { "fila": 5, "columna": 5 }
+      ]
+    },
+    {
+      "nombre": "Letra T",
+      "base": 1,
+      "celdas": [
+        { "fila": 1, "columna": 1 }, { "fila": 1, "columna": 2 }, { "fila": 1, "columna": 3 }, { "fila": 1, "columna": 4 }, { "fila": 1, "columna": 5 },
+        { "fila": 2, "columna": 3 },
+        { "fila": 3, "columna": 3 },
+        { "fila": 4, "columna": 3 },
+        { "fila": 5, "columna": 3 }
+      ]
+    },
+    {
+      "nombre": "Letra U",
+      "base": 1,
+      "celdas": [
+        { "fila": 1, "columna": 1 }, { "fila": 2, "columna": 1 }, { "fila": 3, "columna": 1 }, { "fila": 4, "columna": 1 },
+        { "fila": 5, "columna": 1 }, { "fila": 5, "columna": 2 }, { "fila": 5, "columna": 3 }, { "fila": 5, "columna": 4 }, { "fila": 5, "columna": 5 },
+        { "fila": 1, "columna": 5 }, { "fila": 2, "columna": 5 }, { "fila": 3, "columna": 5 }, { "fila": 4, "columna": 5 }
+      ]
+    },
+    {
+      "nombre": "Letra X",
+      "base": 1,
+      "celdas": [
+        { "fila": 1, "columna": 1 }, { "fila": 1, "columna": 5 },
+        { "fila": 2, "columna": 2 }, { "fila": 2, "columna": 4 },
+        { "fila": 3, "columna": 3 },
+        { "fila": 4, "columna": 2 }, { "fila": 4, "columna": 4 },
+        { "fila": 5, "columna": 1 }, { "fila": 5, "columna": 5 }
+      ]
+    }
+  ]
+}

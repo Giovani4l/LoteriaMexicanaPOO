@@ -1,6 +1,7 @@
-using LoteriaMexicana.Domain;
+﻿using LoteriaMexicana.Domain;
 using LoteriaMexicana.Hubs;
 using Microsoft.AspNetCore.SignalR.Client;
+using static LoteriaMexicana.Domain.RecibirJson;
 
 namespace LoteriaMexicana.Services;
 
@@ -20,9 +21,9 @@ public class ClienteSignalR : IAsyncDisposable
     }
 
     public event Action<bool, string>? RolAsignado;
-    public event Action<List<CasillaDto>>? TablaAsignada;
+    public event Action<List<TablaJugadorDto>, int, int>? TablasAsignadas;
     public event Action<string>? JuegoIniciado;
-    public event Action<string, List<CasillaDto>>? JuegoYaIniciado;
+    public event Action<string, List<TablaJugadorDto>, int, int>? JuegoYaIniciado;
     public event Action<int, string, string>? CartaCantada;
     public event Action? BarajaReiniciada;
     public event Action? SalaReiniciada;
@@ -49,14 +50,14 @@ public class ClienteSignalR : IAsyncDisposable
         _conexionHub.On<bool>("RolesActualizados", esHost =>
             RolAsignado?.Invoke(esHost, ""));
 
-        _conexionHub.On<List<CasillaDto>>("TablaAsignada", casillas =>
-            TablaAsignada?.Invoke(casillas));
+        _conexionHub.On<List<TablaJugadorDto>, int, int>("TablasAsignadas", (tablas, filas, columnas) =>
+            TablasAsignadas?.Invoke(tablas, filas, columnas));
 
         _conexionHub.On<string>("JuegoIniciado", formato =>
             JuegoIniciado?.Invoke(formato));
 
-        _conexionHub.On<string, List<CasillaDto>>("JuegoYaIniciado", (formato, casillas) =>
-            JuegoYaIniciado?.Invoke(formato, casillas));
+        _conexionHub.On<string, List<TablaJugadorDto>, int, int>("JuegoYaIniciado", (formato, tablas, filas, columnas) =>
+            JuegoYaIniciado?.Invoke(formato, tablas, filas, columnas));
 
         _conexionHub.On<int, string, string>("CartaCantada", (numero, nombre, frase) =>
             CartaCantada?.Invoke(numero, nombre, frase));
@@ -104,21 +105,33 @@ public class ClienteSignalR : IAsyncDisposable
     }
 
     public Task UnirseAlJuego(string nombreJugador) => InvocarConArgumento("UnirseAlJuego", nombreJugador);
-    public Task IniciarJuego(string formato, bool tablaDoble, int filas, int columnas)
+    public Task IniciarJuego(string formato, bool tablaDoble, int filas, int columnas, int cantidadTablas)
     {
         if (_conexionHub == null || _conexionHub.State != HubConnectionState.Connected)
             return Task.CompletedTask;
-        return _conexionHub.InvokeAsync("IniciarJuego", formato, tablaDoble, filas, columnas);
+        return _conexionHub.InvokeAsync("IniciarJuego", formato, tablaDoble, filas, columnas, cantidadTablas);
     }
 
     public Task CantarCarta() => InvocarSinArgumentos("CantarCarta");
-    public Task ToggleCarta(int numeroCarta) => InvocarConArgumento("ToggleCarta", numeroCarta);
+    public Task ToggleCarta(int indiceTabla, int numeroCarta)
+    {
+        if (_conexionHub == null || _conexionHub.State != HubConnectionState.Connected)
+            return Task.CompletedTask;
+        return _conexionHub.InvokeAsync("ToggleCarta", indiceTabla, numeroCarta);
+    }
     public Task ReclamarLoteria() => InvocarSinArgumentos("ReclamarLoteria");
     public Task EnviarMensaje(string mensaje) => InvocarConArgumento("EnviarMensaje", mensaje);
     public Task PedirNuevaTabla() => InvocarSinArgumentos("PedirNuevaTabla");
     public Task ReiniciarBaraja() => InvocarSinArgumentos("ReiniciarBaraja");
     public Task ReiniciarSala() => InvocarSinArgumentos("ReiniciarSala");
     public Task CargarTablaDesdeJson(List<CasillaDto> casillas) => InvocarConArgumento("CargarTablaDesdeJson", casillas);
+    public Task CargarTablasDesdeJson(List<TablaJugadorDto> tablas) => InvocarConArgumento("CargarTablasDesdeJson", tablas);
+    public Task CargarTablasPersonalizadas(List<TablaJugadorDto> tablas, int filas, int columnas)
+    {
+        if (_conexionHub == null || _conexionHub.State != HubConnectionState.Connected)
+            return Task.CompletedTask;
+        return _conexionHub.InvokeAsync("CargarTablasPersonalizadas", tablas, filas, columnas);
+    }
     public Task AgregarFormato(string formato) => InvocarConArgumento("AgregarFormato", formato);
 
     private Task InvocarSinArgumentos(string metodoHub)

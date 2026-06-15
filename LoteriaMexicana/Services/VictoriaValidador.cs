@@ -35,6 +35,25 @@ public static class VictoriaValidador
 
         return false;
     }
+    public static bool EsVictoriaEnCualquierFormato(
+        Tabla tabla,
+        IReadOnlySet<int> cartasMarcadas,
+        IEnumerable<FormatoGanador> formatos,
+        IEnumerable<IReadOnlySet<int>> patronesPersonalizados)
+    {
+        return EsVictoriaEnCualquierFormato(tabla, cartasMarcadas, formatos)
+            || EsVictoriaPersonalizada(tabla, cartasMarcadas, patronesPersonalizados);
+    }
+
+    public static bool EsVictoriaPersonalizada(
+        Tabla tabla,
+        IReadOnlySet<int> cartasMarcadas,
+        IEnumerable<IReadOnlySet<int>> patrones)
+    {
+        var indicesMarcados = ObtenerIndicesMarcadosEnTabla(tabla, cartasMarcadas);
+        return patrones.Any(patron => patron.Count > 0 && patron.All(indicesMarcados.Contains));
+    }
+
     public static IEnumerable<int> DetectarTrampa(
         IReadOnlySet<int> cartasMarcadas,
         IEnumerable<int> cartasCantadas)

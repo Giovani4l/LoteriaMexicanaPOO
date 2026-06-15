@@ -1,0 +1,38 @@
+{
+  "formatos": [
+    {
+      "nombre": "Escuadra superior izquierda",
+      "base": 1,
+      "celdas": [
+        { "fila": 1, "columna": 1 },
+        { "fila": 1, "columna": 2 },
+        { "fila": 1, "columna": 3 },
+        { "fila": 2, "columna": 1 },
+        { "fila": 3, "columna": 1 }
+      ]
+    },
+    {
+      "nombre": "Bloque 2x2",
+      "base": 1,
+      "patrones": [
+        [
+          { "fila": 1, "columna": 1 },
+          { "fila": 1, "columna": 2 },
+          { "fila": 2, "columna": 1 },
+          { "fila": 2, "columna": 2 }
+        ],
+        [
+          { "fila": 2, "columna": 2 },
+          { "fila": 2, "columna": 3 },
+          { "fila": 3, "columna": 2 },
+          { "fila": 3, "columna": 3 }
+        ]
+      ]
+    },
+    {
+      "nombre": "Primeras cuatro casillas",
+      "base": 1,
+      "indices": [1, 2, 3, 4]
+    }
+  ]
+}
