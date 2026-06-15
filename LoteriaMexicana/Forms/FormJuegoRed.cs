@@ -17,7 +17,8 @@ public partial class FormJuegoRed : Form
     private readonly FichaService _fichas;
     private readonly string _nombreJugador;
     private readonly bool _esHost;
-
+    private System.Windows.Forms.Timer _timerAutoCanto = new();
+    private bool _modoAutomatico = false;
     // ── Estado de la partida ──────────────────────────────────────────────────
     private readonly Dictionary<int, string> _fichasEnTabla = new();
     private bool _partidaEnCurso;
@@ -40,7 +41,7 @@ public partial class FormJuegoRed : Form
     private readonly Dictionary<string, PictureBox> _picturesFichas = new();
     private readonly List<ToolTip> _tooltips = new();
 
-
+    private bool _cantandoCarta = false;
     public FormJuegoRed(ClienteSignalR cliente, ServidorSignalR? servidor,
                         string nombreJugador, bool esHost)
     {
@@ -56,7 +57,21 @@ public partial class FormJuegoRed : Form
         _fichas.PrecargarTodasLasFichas();
 
         InitializeComponent();
+        _timerAutoCanto.Tick += async (s, e) =>
+        {
+            _timerAutoCanto.Stop();
 
+            try
+            {
+                if (_esHost && _partidaEnCurso)
+                    await _cliente.CantarCarta();
+            }
+            finally
+            {
+                if (_modoAutomatico)
+                    _timerAutoCanto.Start();
+            }
+        };
         Text = $"Lotería Mexicana — {nombreJugador}{(esHost ? " (Gritón)" : "")}";
         lblUsuario.Text = $" {nombreJugador}{(esHost ? "   Gritón" : "")}";
 
@@ -641,6 +656,42 @@ public partial class FormJuegoRed : Form
         g.SmoothingMode = SmoothingMode.HighQuality;
         g.PixelOffsetMode = PixelOffsetMode.HighQuality;
         g.CompositingQuality = CompositingQuality.HighQuality;
+    }
+
+   
+
+    private void cmbVelocidad_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        
+        switch (cmbVelocidad.Text)
+        {
+            case "Lento":
+                _tts.CambiarVelocidad(-3);
+                _timerAutoCanto.Interval = 7000;
+                break;
+
+            case "Normal":
+                _tts.CambiarVelocidad(0);
+                _timerAutoCanto.Interval = 5000;
+                break;
+
+            case "Rápido":
+                _tts.CambiarVelocidad(3);
+                _timerAutoCanto.Interval = 3000;
+                break;
+        }
+    }
+
+    private void btnAuto_Click_1(object sender, EventArgs e)
+    {
+        _modoAutomatico = true;
+        _timerAutoCanto.Start();
+    }
+
+    private void btnDetenerAuto_Click_1(object sender, EventArgs e)
+    {
+        _modoAutomatico = false;
+        _timerAutoCanto.Stop();
     }
 
     // ── Tipos auxiliares ──────────────────────────────────────────────────────

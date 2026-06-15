@@ -26,7 +26,7 @@ public sealed class TtsService : IDisposable
     public void CantarCarta(string frase, string nombreCarta)
     {
         if (!Habilitado) return;
-        _sintetizador.SpeakAsyncCancelAll();
+        //_sintetizador.SpeakAsyncCancelAll();
         _sintetizador.SpeakAsync($"{frase}... {nombreCarta}");
     }
 
@@ -36,5 +36,9 @@ public sealed class TtsService : IDisposable
         _sintetizador.SpeakAsyncCancelAll();
         _sintetizador.Dispose();
         _disposed = true;
+    }
+    public void CambiarVelocidad(int velocidad)
+    {
+        _sintetizador.Rate = velocidad;
     }
 }

@@ -23,6 +23,9 @@ partial class FormJuegoRed
         pnlBandaDorada = new Panel();
         tblMain = new TableLayoutPanel();
         pnlIzquierdo = new Panel();
+        cmbVelocidad = new ComboBox();
+        btnDetenerAuto = new Button();
+        btnAuto = new Button();
         pnlConfigHost = new Panel();
         bandaHost = new Panel();
         btnIniciar = new Button();
@@ -146,6 +149,9 @@ partial class FormJuegoRed
         // pnlIzquierdo
         // 
         pnlIzquierdo.BackColor = Color.SaddleBrown;
+        pnlIzquierdo.Controls.Add(cmbVelocidad);
+        pnlIzquierdo.Controls.Add(btnDetenerAuto);
+        pnlIzquierdo.Controls.Add(btnAuto);
         pnlIzquierdo.Controls.Add(pnlConfigHost);
         pnlIzquierdo.Controls.Add(pnlCartaCard);
         pnlIzquierdo.Controls.Add(chkTts);
@@ -158,6 +164,52 @@ partial class FormJuegoRed
         pnlIzquierdo.Padding = new Padding(16, 19, 16, 19);
         pnlIzquierdo.Size = new Size(359, 970);
         pnlIzquierdo.TabIndex = 0;
+        // 
+        // cmbVelocidad
+        // 
+        cmbVelocidad.FormattingEnabled = true;
+        cmbVelocidad.Items.AddRange(new object[] { "Lento", "Normal", "Rápido" });
+        cmbVelocidad.Location = new Point(27, 581);
+        cmbVelocidad.Name = "cmbVelocidad";
+        cmbVelocidad.Size = new Size(280, 28);
+        cmbVelocidad.TabIndex = 16;
+        cmbVelocidad.SelectedIndexChanged += cmbVelocidad_SelectedIndexChanged;
+        // 
+        // btnDetenerAuto
+        // 
+        btnDetenerAuto.BackColor = Color.DodgerBlue;
+        btnDetenerAuto.BackgroundImageLayout = ImageLayout.Stretch;
+        btnDetenerAuto.Cursor = Cursors.Hand;
+        btnDetenerAuto.FlatAppearance.BorderSize = 0;
+        btnDetenerAuto.FlatStyle = FlatStyle.Flat;
+        btnDetenerAuto.Font = new Font("Georgia", 10.2F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 0);
+        btnDetenerAuto.ForeColor = Color.White;
+        btnDetenerAuto.Location = new Point(197, 512);
+        btnDetenerAuto.Margin = new Padding(3, 4, 3, 4);
+        btnDetenerAuto.Name = "btnDetenerAuto";
+        btnDetenerAuto.Size = new Size(143, 40);
+        btnDetenerAuto.TabIndex = 17;
+        btnDetenerAuto.Text = "⏹ Detener";
+        btnDetenerAuto.UseVisualStyleBackColor = false;
+        btnDetenerAuto.Click += btnDetenerAuto_Click_1;
+        // 
+        // btnAuto
+        // 
+        btnAuto.BackColor = Color.DodgerBlue;
+        btnAuto.BackgroundImageLayout = ImageLayout.Stretch;
+        btnAuto.Cursor = Cursors.Hand;
+        btnAuto.FlatAppearance.BorderSize = 0;
+        btnAuto.FlatStyle = FlatStyle.Flat;
+        btnAuto.Font = new Font("Georgia", 10.2F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 0);
+        btnAuto.ForeColor = Color.White;
+        btnAuto.Location = new Point(11, 512);
+        btnAuto.Margin = new Padding(3, 4, 3, 4);
+        btnAuto.Name = "btnAuto";
+        btnAuto.Size = new Size(143, 40);
+        btnAuto.TabIndex = 14;
+        btnAuto.Text = "▶ Auto";
+        btnAuto.UseVisualStyleBackColor = false;
+        btnAuto.Click += btnAuto_Click_1;
         // 
         // pnlConfigHost
         // 
@@ -346,7 +398,7 @@ partial class FormJuegoRed
         chkTts.CheckState = CheckState.Checked;
         chkTts.Font = new Font("Segoe UI", 9F);
         chkTts.ForeColor = Color.White;
-        chkTts.Location = new Point(11, 512);
+        chkTts.Location = new Point(3, 666);
         chkTts.Margin = new Padding(3, 4, 3, 4);
         chkTts.Name = "chkTts";
         chkTts.Size = new Size(98, 24);
@@ -359,7 +411,7 @@ partial class FormJuegoRed
         lblFichasTxt.AutoSize = true;
         lblFichasTxt.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
         lblFichasTxt.ForeColor = Color.White;
-        lblFichasTxt.Location = new Point(0, 543);
+        lblFichasTxt.Location = new Point(0, 694);
         lblFichasTxt.Name = "lblFichasTxt";
         lblFichasTxt.Size = new Size(277, 20);
         lblFichasTxt.TabIndex = 4;
@@ -371,7 +423,7 @@ partial class FormJuegoRed
         flpFichas.BackgroundImage = (Image)resources.GetObject("flpFichas.BackgroundImage");
         flpFichas.BackgroundImageLayout = ImageLayout.Stretch;
         flpFichas.BorderStyle = BorderStyle.FixedSingle;
-        flpFichas.Location = new Point(0, 567);
+        flpFichas.Location = new Point(4, 718);
         flpFichas.Margin = new Padding(3, 4, 3, 4);
         flpFichas.Name = "flpFichas";
         flpFichas.Padding = new Padding(7, 8, 7, 8);
@@ -808,4 +860,7 @@ partial class FormJuegoRed
     private System.Windows.Forms.Button           btnGuardarTabla;
     private System.Windows.Forms.Button           btnCargarTabla;
     private System.Windows.Forms.Button           btnReiniciarSala;
+    private ComboBox cmbVelocidad;
+    private Button btnDetenerAuto;
+    private Button btnAuto;
 }
